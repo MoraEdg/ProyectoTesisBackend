@@ -12,6 +12,15 @@ https://edgarmoratesis.atlassian.net/jira/software/projects/SCRUM/boards/1/backl
 #Proyecto de Tesis 
 #
 
+## 🧩 Arquitectura del Sistema
+
+| **Capa**       | **Tecnologías**               | **Responsabilidades**                          |
+|----------------|-------------------------------|-----------------------------------------------|
+| **Frontend**   | ReactJS, Vite, Axios          | Interfaz de usuario, gestión de estado        |
+| **Backend**    | Node.js, Express, JWT         | API REST, autenticación, lógica de negocio    |
+| **Database**   | PostgreSQL, Prisma ORM        | Almacenamiento persistente, gestión de datos  |
+
+
 ## Descripción
 Este es el frontend de la aplicación web para la gestión de prácticas preprofesionales en la Universidad SEK, construido con React y Redux.
 
