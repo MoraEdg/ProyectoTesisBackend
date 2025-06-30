@@ -8,7 +8,7 @@ https://github.com/MoraEdg/ProyectoTesisFrontend.git
 ## Enlace al proyecto de Gira
 https://edgarmoratesis.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog?atlOrigin=eyJpIjoiMTAxYjdkODNhZWNhNDA2YzhkYTc4MmM1YzJmMGI2MjQiLCJwIjoiaiJ9
 
-# Frontend - Sistema de Gestión de Prácticas Preprofesionales
+# Backend - Sistema de Gestión de Prácticas Preprofesionales
 #Proyecto de Tesis 
 #
 
