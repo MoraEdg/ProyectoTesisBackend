@@ -5,7 +5,7 @@
 ## Enlace al repositorio en GitHub del FrontEnd
 https://github.com/MoraEdg/ProyectoTesisFrontend.git
 
-## Enlace al proyecto de Gira
+## Enlace al proyecto de Jira
 https://edgarmoratesis.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog?atlOrigin=eyJpIjoiMTAxYjdkODNhZWNhNDA2YzhkYTc4MmM1YzJmMGI2MjQiLCJwIjoiaiJ9
 
 # Backend - Sistema de Gestión de Prácticas Preprofesionales
