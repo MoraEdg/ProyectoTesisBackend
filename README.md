@@ -22,13 +22,13 @@ https://edgarmoratesis.atlassian.net/jira/software/projects/SCRUM/boards/1/backl
 
 
 ## Descripción
-Este es el frontend de la aplicación web para la gestión de prácticas preprofesionales en la Universidad SEK, construido con React y Redux.
+Este es el backend de la aplicación web para la gestión de prácticas preprofesionales en la Universidad SEK, construido con React y Redux.
 
 ## Requisitos Previos
 - Node.js (v14 o superior)
 - npm
 
-## Instrucciones para Levantar el Frontend
+## Instrucciones para Levantar el Backend
 
 1. **Clonar el repositorio**:
    ```
