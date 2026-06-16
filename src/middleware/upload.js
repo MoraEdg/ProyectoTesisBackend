@@ -1,5 +1,6 @@
 const multer = require('multer');
 const path   = require('path');
+const fs     = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 function crearStorage(destino) {
@@ -31,11 +32,24 @@ exports.uploadConvenio = multer({
   }
 }).single('archivo');
 
+const TMP_DIR = './uploads/tmp';
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
+
 exports.uploadExcel = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, TMP_DIR),
+    filename:    (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${uuidv4()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, ['.xlsx', '.xls'].includes(ext));
-  }
+    if (['.xlsx', '.xls', '.xlsm'].includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos Excel (.xlsx, .xls, .xlsm)'), false);
+    }
+  },
 }).single('archivo');

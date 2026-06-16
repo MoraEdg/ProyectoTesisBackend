@@ -20,8 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // ─── RUTAS ────────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth',      require('./modules/auth/auth.routes'));
 app.use('/api/v1/catalogos', require('./modules/catalogos/catalogos.routes'));
-// Sprint 2:
-// app.use('/api/v1/estudiantes', require('./modules/estudiantes/estudiantes.routes'));
+app.use('/api/v1/estudiantes', require('./modules/estudiantes/estudiantes.routes'));
 // Sprint 3-4:
 // app.use('/api/v1/tramites',   require('./modules/tramites/tramites.routes'));
 // app.use('/api/v1/hitos',      require('./modules/hitos/hitos.routes'));
