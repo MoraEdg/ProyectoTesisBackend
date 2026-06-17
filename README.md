@@ -52,7 +52,7 @@ src/
 └── modules/
     ├── auth/               — Login, logout, /me
     ├── catalogos/          — Roles, estados, tipos de proceso, periodos, convenios
-    ├── estudiantes/        — (Sprint 2)
+    ├── estudiantes/        — CRUD, desactivación, importación Excel
     ├── tramites/           — (Sprint 3-4)
     ├── hitos/              — (Sprint 3-4)
     ├── documentos/         — (Sprint 3-4)
@@ -151,7 +151,7 @@ El servidor queda disponible en `http://localhost:5000`.
 
 ---
 
-## API — Endpoints disponibles (Sprint 1)
+## API — Endpoints disponibles
 
 Base URL: `http://localhost:5000/api/v1`
 
@@ -199,6 +199,23 @@ POST /api/v1/auth/login
 | GET | `/catalogos/periodos` | Todos |
 | GET | `/catalogos/tipos-documento-generado` | Coordinador, Estudiante |
 
+### Gestión de Estudiantes (requieren autenticación — rol Coordinador)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/estudiantes` | Listar estudiantes (paginación, búsqueda, filtros) |
+| GET | `/estudiantes/:id` | Detalle de un estudiante |
+| POST | `/estudiantes` | Registrar estudiante (usuario = cédula, contraseña = cédula) |
+| PUT | `/estudiantes/:id` | Editar datos del estudiante (cédula no editable) |
+| PATCH | `/estudiantes/:id/desactivar` | Desactivación lógica (estado = false) |
+| POST | `/estudiantes/importar` | Importar desde Excel (multipart/form-data, campo `archivo`) |
+
+**Formato Excel para importación:**
+- Hoja: `Estudiantes`
+- Columnas requeridas: `Cedula`, `Apellidos`, `Nombres`, `Correo`, `Matricula`, `Carrera`
+- Columna opcional: `Telefono`
+- Archivos permitidos: `.xlsx`, `.xls`, `.xlsm` (máx. 10 MB)
+
 ### Health check
 
 ```
@@ -239,7 +256,7 @@ La autenticación usa `Authorization: Bearer <token>` en el header.
 | Sprint | Módulo | Estado |
 |---|---|---|
 | Sprint 1 | Fundación (auth, catálogos, schema, seeds) | Completado |
-| Sprint 2 | Gestión de Estudiantes | Pendiente |
+| Sprint 2 | Gestión de Estudiantes (CRUD, importación Excel) | Completado |
 | Sprint 3 | Gestión de Trámites | Pendiente |
 | Sprint 4 | Gestión de Hitos y Documentos | Pendiente |
 | Sprint 5 | Gestión de Convenios | Pendiente |
