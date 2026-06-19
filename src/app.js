@@ -21,9 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1/auth',      require('./modules/auth/auth.routes'));
 app.use('/api/v1/catalogos', require('./modules/catalogos/catalogos.routes'));
 app.use('/api/v1/estudiantes', require('./modules/estudiantes/estudiantes.routes'));
-// Sprint 3-4:
-// app.use('/api/v1/tramites',   require('./modules/tramites/tramites.routes'));
-// app.use('/api/v1/hitos',      require('./modules/hitos/hitos.routes'));
+app.use('/api/v1/tramites',    require('./modules/tramites/tramites.routes'));
+app.use('/api/v1/hitos',       require('./modules/hitos/hitos.routes'));
 // app.use('/api/v1/documentos', require('./modules/documentos/documentos.routes'));
 // Sprint 5:
 // app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
