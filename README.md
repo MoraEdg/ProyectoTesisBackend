@@ -53,8 +53,8 @@ src/
     ├── auth/               — Login, logout, /me
     ├── catalogos/          — Roles, estados, tipos de proceso, periodos, convenios
     ├── estudiantes/        — CRUD, desactivación, importación Excel
-    ├── tramites/           — (Sprint 3-4)
-    ├── hitos/              — (Sprint 3-4)
+    ├── tramites/           — Crear, estados, historial, cierre de trámites
+    ├── hitos/              — Estados de hitos, historial, avance automático del trámite
     ├── documentos/         — (Sprint 3-4)
     ├── convenios/          — (Sprint 5)
     └── generacion/         — (Sprint 6)
@@ -216,6 +216,46 @@ POST /api/v1/auth/login
 - Columna opcional: `Telefono`
 - Archivos permitidos: `.xlsx`, `.xls`, `.xlsm` (máx. 10 MB)
 
+### Gestión de Trámites (requieren autenticación)
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| GET | `/tramites` | Coordinador (todos), Estudiante (propios) | Listar trámites |
+| GET | `/tramites/:id` | Coordinador, Estudiante (propio) | Detalle del trámite |
+| POST | `/tramites` | Coordinador | Crear trámite (estudiante + proceso + período) |
+| PATCH | `/tramites/:id/estado` | Coordinador | Cambiar estado del trámite |
+| POST | `/tramites/:id/cerrar` | Coordinador | Finalizar (APROBADO a FINALIZADO) |
+| GET | `/tramites/:id/historial` | Coordinador, Estudiante (propio) | Historial de estados |
+
+**Máquina de estados:**
+```
+INICIADO → EN_REVISION → OBSERVADO → CORREGIDO → EN_REVISION → APROBADO → FINALIZADO
+```
+
+**Códigos de trámite** (generados automáticamente):
+- Prácticas Preprofesionales: `PRAC-2026-001`
+- Reconocimiento Laboral: `RLAB-2026-001`
+- Convalidación: `CONV-2026-001`
+
+### Gestión de Hitos (requieren autenticación)
+
+| Método | Ruta | Roles | Descripción |
+|---|---|---|---|
+| GET | `/tramites/:tramiteId/hitos` | Coordinador, Estudiante (propio) | Listar hitos de un trámite |
+| GET | `/hitos/:id` | Coordinador, Estudiante (propio) | Detalle de un hito |
+| PATCH | `/hitos/:id/estado` | Coordinador | Cambiar estado del hito |
+| GET | `/hitos/:id/historial` | Coordinador, Estudiante (propio) | Historial de estados del hito |
+
+**Máquina de estados del hito:**
+```
+PENDIENTE → EN_REVISION → OBSERVADO → EN_REVISION → APROBADO (terminal)
+```
+
+**Comportamiento automático:**
+- Al crear un trámite, se instancian todos sus hitos en estado PENDIENTE
+- Al aprobarse todos los hitos, el trámite avanza automáticamente a APROBADO
+- La finalización del trámite (APROBADO → FINALIZADO) sigue siendo manual
+
 ### Health check
 
 ```
@@ -257,7 +297,7 @@ La autenticación usa `Authorization: Bearer <token>` en el header.
 |---|---|---|
 | Sprint 1 | Fundación (auth, catálogos, schema, seeds) | Completado |
 | Sprint 2 | Gestión de Estudiantes (CRUD, importación Excel) | Completado |
-| Sprint 3 | Gestión de Trámites | Pendiente |
-| Sprint 4 | Gestión de Hitos y Documentos | Pendiente |
+| Sprint 3 | Gestión de Trámites (estados, historial, cierre) | Completado |
+| Sprint 4 | Gestión de Hitos (estados, avance automático, historial) | Completado |
 | Sprint 5 | Gestión de Convenios | Pendiente |
 | Sprint 6 | Generación de Documentos | Pendiente |
