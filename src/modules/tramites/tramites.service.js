@@ -202,6 +202,20 @@ async function cambiarEstado(id_tramite, estadoDestino, comentario, usuario_id) 
       throw { status: 400, message: `Transición inválida: de ${estadoActual} no se puede pasar a ${estadoDestino}` };
     }
 
+    if (estadoDestino === 'APROBADO') {
+      const hitosQ = await client.query(
+        `SELECT COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE es.nombre = 'APROBADO') AS aprobados
+         FROM hitos h JOIN estados es ON h.estado_id = es.id
+         WHERE h.tramite_id = $1`, [id_tramite]
+      );
+      const total    = parseInt(hitosQ.rows[0].total);
+      const aprobados = parseInt(hitosQ.rows[0].aprobados);
+      if (total !== aprobados) {
+        throw { status: 400, message: 'No se puede aprobar el trámite porque existen hitos pendientes. Aprobar cada hito primero.' };
+      }
+    }
+
     const estDest = await client.query(
       `SELECT id FROM estados WHERE nombre = $1 AND categoria = 'TRAMITE'`, [estadoDestino]
     );

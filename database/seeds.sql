@@ -70,32 +70,22 @@ INSERT INTO tipos_documento_generado (nombre) VALUES
 
 -- ─── PLANTILLAS DE HITO ───────────────────────────────────────────────────────
 
--- Prácticas Preprofesionales — 5 hitos
+-- Prácticas Preprofesionales — 3 hitos (decisión #2, validada con el Coordinador)
 INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id) VALUES
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
-    1, 'Carta de Petición',
+    1, 'Formalización',
     (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
   ),
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
-    2, 'Carta de Intención',
+    2, 'Seguimiento',
     (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
   ),
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
-    3, 'Carta de Formalización',
-    (SELECT id FROM roles WHERE nombre_rol = 'Director')
-  ),
-  (
-    (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
-    4, 'Informe Final de Prácticas',
+    3, 'Finalización',
     (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
-  ),
-  (
-    (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
-    5, 'Acta de Finalización',
-    (SELECT id FROM roles WHERE nombre_rol = 'Decano')
   );
 
 -- Reconocimiento Laboral — 2 hitos
@@ -127,49 +117,31 @@ INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id)
 -- ─── TIPOS DE DOCUMENTO (ligados a cada plantilla de hito) ────────────────────
 -- Cada hito define qué documentos debe subir el estudiante.
 
--- PP Hito 1 — Carta de Petición
+-- PP Hito 1 — Formalización (nombre oficial congelado)
 INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
   (
     (SELECT ph.id FROM plantillas_hito ph
      JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
      WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 1),
-    'Formulario de Solicitud de Prácticas', '.pdf,.docx', 10, TRUE
+    'Carta de Intención (Aceptación de Empresa)', '.pdf', 10, TRUE
   );
 
--- PP Hito 2 — Carta de Intención
+-- PP Hito 2 — Seguimiento (nombre oficial congelado)
 INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
   (
     (SELECT ph.id FROM plantillas_hito ph
      JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
      WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 2),
-    'Carta de Aceptación de la Empresa', '.pdf', 10, TRUE
+    'FPP3 - Seguimiento de Prácticas (Firmado)', '.pdf', 10, TRUE
   );
 
--- PP Hito 3 — Carta de Formalización
+-- PP Hito 3 — Finalización (nombre oficial congelado)
 INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
   (
     (SELECT ph.id FROM plantillas_hito ph
      JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
      WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 3),
-    'Convenio Marco o Específico Firmado', '.pdf', 20, TRUE
-  );
-
--- PP Hito 4 — Informe Final de Prácticas
-INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
-  (
-    (SELECT ph.id FROM plantillas_hito ph
-     JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
-     WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 4),
-    'Informe Final de Prácticas', '.pdf,.docx', 20, TRUE
-  );
-
--- PP Hito 5 — Acta de Finalización
-INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
-  (
-    (SELECT ph.id FROM plantillas_hito ph
-     JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
-     WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 5),
-    'Acta de Finalización Firmada', '.pdf', 10, TRUE
+    'Certificado de Culminación de Prácticas (Empresa)', '.pdf', 10, TRUE
   );
 
 -- RL Hito 1 — Solicitud de Reconocimiento

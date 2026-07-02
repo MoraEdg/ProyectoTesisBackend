@@ -11,13 +11,13 @@ const ESTADOS = {
     PENDIENTE:   ['EN_REVISION'],
     EN_REVISION: ['OBSERVADO', 'APROBADO'],
     OBSERVADO:   ['EN_REVISION'],
-    APROBADO:    [],
+    APROBADO:    ['EN_REVISION'],
   },
   DOCUMENTO: {
     SUBIDO:      ['EN_REVISION'],
     EN_REVISION: ['OBSERVADO', 'APROBADO'],
     OBSERVADO:   [],       // el reemplazo genera nuevo doc con SUBIDO
-    APROBADO:    [],
+    APROBADO:    ['OBSERVADO'], // permite revertir antes de reemplazar (Sprint 5, HU-4)
     REEMPLAZADO: [],
   },
   CONVENIO: {

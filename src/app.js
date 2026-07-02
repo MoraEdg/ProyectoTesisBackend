@@ -23,7 +23,7 @@ app.use('/api/v1/catalogos', require('./modules/catalogos/catalogos.routes'));
 app.use('/api/v1/estudiantes', require('./modules/estudiantes/estudiantes.routes'));
 app.use('/api/v1/tramites',    require('./modules/tramites/tramites.routes'));
 app.use('/api/v1/hitos',       require('./modules/hitos/hitos.routes'));
-// app.use('/api/v1/documentos', require('./modules/documentos/documentos.routes'));
+app.use('/api/v1/documentos',  require('./modules/documentos/documentos.routes'));
 // Sprint 5:
 // app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
 // Sprint 6:
