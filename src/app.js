@@ -24,10 +24,8 @@ app.use('/api/v1/estudiantes', require('./modules/estudiantes/estudiantes.routes
 app.use('/api/v1/tramites',    require('./modules/tramites/tramites.routes'));
 app.use('/api/v1/hitos',       require('./modules/hitos/hitos.routes'));
 app.use('/api/v1/documentos',  require('./modules/documentos/documentos.routes'));
-// Sprint 5:
+app.use('/api/v1/generacion',  require('./modules/generacion/generacion.routes'));
 // app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
-// Sprint 6:
-// app.use('/api/v1/generacion', require('./modules/generacion/generacion.routes'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
 app.get('/api/v1/health', (req, res) => {
@@ -41,7 +39,7 @@ app.use((req, res) => {
 
 // ─── MANEJADOR DE ERRORES GLOBAL ─────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('❌ Error no controlado:', err.stack);
+  console.error('Error no controlado:', err.stack);
   res.status(500).json({
     success: false,
     error: process.env.NODE_ENV === 'production'

@@ -63,10 +63,14 @@ INSERT INTO periodos (nombre_periodo, fecha_inicio, fecha_fin, activo) VALUES
   ('2026-1', '2026-03-01', '2026-08-31', TRUE);
 
 -- ─── TIPOS DE DOCUMENTO GENERADO ──────────────────────────────────────────────
-INSERT INTO tipos_documento_generado (nombre) VALUES
-  ('Carta de Petición'),
-  ('Carta de Intención'),
-  ('Carta de Formalización');
+-- 4 tipos definitivos del levantamiento (Sprint 6)
+INSERT INTO tipos_documento_generado (id, nombre) VALUES
+  (1, 'Carta de Formalizacion (Empresa con Convenio)'),
+  (2, 'Carta de Formalizacion (Empresa sin Convenio)'),
+  (3, 'Carta de Peticion'),
+  (4, 'FPP3 - Formato de Seguimiento');
+
+SELECT setval(pg_get_serial_sequence('tipos_documento_generado', 'id'), 4);
 
 -- ─── PLANTILLAS DE HITO ───────────────────────────────────────────────────────
 
@@ -181,19 +185,20 @@ INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tam
   );
 
 -- ─── PLANTILLAS DE DOCUMENTO (para generación automática de cartas) ───────────
+-- Rutas relativas desde la raiz del backend (portabilidad entre entornos).
 INSERT INTO plantillas_documento (tipo_documento_generado_id, nombre, descripcion, ruta_archivo, activa) VALUES
-  (
-    (SELECT id FROM tipos_documento_generado WHERE nombre = 'Carta de Petición'),
-    'Carta de Petición', NULL, './plantillas/carta_peticion.docx', TRUE
-  ),
-  (
-    (SELECT id FROM tipos_documento_generado WHERE nombre = 'Carta de Intención'),
-    'Carta de Intención', NULL, './plantillas/carta_intencion.docx', TRUE
-  ),
-  (
-    (SELECT id FROM tipos_documento_generado WHERE nombre = 'Carta de Formalización'),
-    'Carta de Formalización', NULL, './plantillas/carta_formalizacion.docx', TRUE
-  );
+  (1, 'FPP2 con convenio',
+      'Carta de formalizacion para empresas con convenio vigente',
+      'plantillas/fpp2_con_convenio.docx', TRUE),
+  (2, 'FPP2 sin convenio',
+      'Carta de formalizacion para empresas sin convenio',
+      'plantillas/fpp2_sin_convenio.docx', TRUE),
+  (3, 'Carta de Peticion',
+      'Carta de peticion a solicitud de la empresa (opcional)',
+      'plantillas/carta_peticion.docx', TRUE),
+  (4, 'FPP3 plantilla',
+      'Formato de seguimiento vacio para llenar y firmar manualmente',
+      'plantillas/fpp3.docx', TRUE);
 
 -- ─── USUARIO ADMINISTRADOR (Coordinador de prueba) ───────────────────────────
 -- Contraseña: Admin1234 (hash bcrypt cost 10)

@@ -22,7 +22,7 @@
 | Hash de contraseñas      | bcrypt                 | 5.x     |
 | Subida de archivos       | multer                 | 1.x     |
 | Validación               | express-validator      | 7.x     |
-| Generación de documentos | docxtemplater + pizzip | —       |
+| Generación de documentos | docxtemplater + pizzip | 3.x / 3.x |
 | Procesamiento Excel      | xlsx                   | —       |
 | Variables de entorno     | dotenv                 | 16.x    |
 
@@ -57,7 +57,7 @@ src/
     ├── hitos/              — Estados de hitos, historial, avance automático del trámite
     ├── documentos/         — Subida, aprobación, observación y versionado de documentos
     ├── convenios/          — (pendiente)
-    └── generacion/         — (Sprint 6)
+    └── generacion/         — generación de documentos Word (Sprint 6) ✅
 ```
 
 ---
@@ -127,14 +127,29 @@ npm run db:schema
 # Insertar datos iniciales
 npm run db:seeds
 
-# Aplicar migraciones de Sprint 4 y 5 (orden secuencial)
+# Aplicar migraciones en orden secuencial
 psql -U postgres -d practicas_db -f database/migrations/sprint4_01_historial_hitos.sql
 psql -U postgres -d practicas_db -f database/migrations/sprint4_02_historial_tramites_nullable.sql
 psql -U postgres -d practicas_db -f database/migrations/sprint4_03_indices_hitos.sql
 psql -U postgres -d practicas_db -f database/migrations/sprint5_01_practicas_hitos_documentos.sql
+psql -U postgres -d practicas_db -f database/migrations/sprint6_01_documentos_generados.sql
+psql -U postgres -d practicas_db -f database/migrations/sprint6_02_seeds_generacion.sql
 ```
 
-> Nota: una instalación nueva ejecutada con `npm run db:seeds` ya nace con los 3 hitos definitivos de Prácticas Preprofesionales. La migración `sprint5_01` solo es necesaria para bases de datos creadas con `seeds.sql` de versiones anteriores al Sprint 5.
+> Nota: una instalación nueva ejecutada con `npm run db:seeds` ya nace con los datos definitivos (3 hitos PP, 4 tipos de documento generado). Las migraciones de sprint5 y sprint6 solo son necesarias para bases de datos creadas antes de esos sprints.
+
+### 5. Preparar plantillas de documentos
+
+Colocar los 4 archivos DOCX en `plantillas/` con estos nombres exactos:
+
+| Archivo | Marcadores requeridos |
+| ------- | --------------------- |
+| `plantillas/carta_peticion.docx` | `<<FECHA>> <<GERENTE>> <<CARGO>> <<EMPRESA>> <<ESTUDIANTE>> <<CEDULA>> <<SEMESTRE>> <<CARRERA>>` |
+| `plantillas/fpp2_con_convenio.docx` | `<<FECHA>> <<EMPRESA>> <<ESTUDIANTE>> <<CEDULA>> <<SEMESTRE>> <<CARRERA>>` |
+| `plantillas/fpp2_sin_convenio.docx` | `<<FECHA>> <<EMPRESA>> <<ESTUDIANTE>> <<CEDULA>> <<SEMESTRE>> <<CARRERA>>` |
+| `plantillas/fpp3.docx` | Ninguno (se entrega tal cual) |
+
+Los archivos originales nunca se modifican en ejecución; el sistema trabaja siempre sobre una copia en memoria.
 
 ### 4. Levantar el servidor
 
@@ -305,6 +320,31 @@ SUBIDO → EN_REVISION → OBSERVADO (terminal hasta nueva versión)
 - Seguimiento → *FPP3 - Seguimiento de Prácticas (Firmado)*
 - Finalización → *Certificado de Culminación de Prácticas (Empresa)*
 
+### Generación de Documentos (requieren autenticación — rol Coordinador)
+
+| Método | Ruta | Descripción |
+| ------ | ---- | ----------- |
+| GET    | `/generacion/tipos` | Lista los 4 tipos de documento disponibles |
+| POST   | `/tramites/:tramiteId/generar-documento` | Genera el documento y lo devuelve como descarga inmediata |
+| GET    | `/tramites/:tramiteId/documentos-generados` | Historial de documentos generados del trámite |
+| GET    | `/generacion/documentos/:id/descargar` | Re-descarga de un documento generado anteriormente |
+
+**Tipos disponibles:**
+
+| id | Tipo | Campos del formulario |
+|----|------|-----------------------|
+| 1  | FPP2 — Carta de Formalización (con convenio) | Empresa, Semestre |
+| 2  | FPP2 — Carta de Formalización (sin convenio) | Empresa, Semestre |
+| 3  | Carta de Petición | Empresa, Gerente, Cargo, Semestre |
+| 4  | FPP3 — Formato de Seguimiento (plantilla vacía) | Sin campos adicionales |
+
+**Comportamiento:**
+- El tipo 4 (FPP3) se genera, guarda y registra igual que los demás, pero sin reemplazo de marcadores
+- `<<FECHA>>` se genera en el servidor con formato institucional ("Quito, D de mes de AAAA"); no la ingresa el usuario
+- Regenerar el mismo tipo para el mismo trámite crea un archivo nuevo (timestamp único) y una nueva fila; nunca sobrescribe
+- Las plantillas originales en `plantillas/` son inmutables en ejecución
+- Los archivos generados se guardan en `uploads/generados/{tramite_id}/`
+
 ### Health check
 
 ```
@@ -351,4 +391,4 @@ La autenticación usa `Authorization: Bearer <token>` en el header.
 | Sprint 3 | Gestión de Trámites (estados, historial, cierre)         | Completado |
 | Sprint 4 | Gestión de Hitos (estados, avance automático, historial) | Completado |
 | Sprint 5 | Gestión de Documentos (subida, aprobación, versionado)   | Completado |
-| Sprint 6 | Generación de Documentos Word                            | Pendiente  |
+| Sprint 6 | Generación de Documentos Word (FPP2, Carta de Petición, FPP3) | Completado |
