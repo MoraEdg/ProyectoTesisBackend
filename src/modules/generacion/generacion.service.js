@@ -7,14 +7,14 @@ const pool = require('../../config/db');
 // Raiz del backend: src/modules/generacion/ → ../../.. → backend/
 const RAIZ = path.join(__dirname, '../../..');
 
-// Formato institucional: "Quito, 10 de julio de 2026"
+// Solo la fecha: "10 de julio de 2026". La plantilla ya incluye "Quito, " antes del marcador.
 function fechaInstitucional() {
   const MESES = [
     'enero','febrero','marzo','abril','mayo','junio',
     'julio','agosto','septiembre','octubre','noviembre','diciembre',
   ];
   const d = new Date();
-  return `Quito, ${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+  return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
 }
 
 // Normaliza texto para nombre de archivo: sin tildes, sin espacios, solo alfanumérico.
@@ -25,24 +25,32 @@ function slug(texto) {
 }
 
 // ─── GENERAR DOCUMENTO ────────────────────────────────────────────────────────
-// datos = { tipo_documento_generado_id, empresa?, semestre?, gerente?, cargo? }
+// datos = { tipo_documento_generado_id, empresa?, semestre?, gerente?, cargo?, titulo? }
 // Devuelve { buffer, nombre_archivo, registro }
 async function generar(tramite_id, datos, usuario_id) {
   const tipoId = parseInt(datos.tipo_documento_generado_id, 10);
 
-  // 1. Datos del trámite y el estudiante
+  // 1. Datos del trámite y el estudiante (incluye tipo de proceso para validación)
   const tQ = await pool.query(
     `SELECT t.codigo_tramite,
             u.nombres, u.apellidos, u.cedula,
-            e.id_estudiante, e.carrera
+            e.id_estudiante, e.carrera,
+            tp.nombre AS tipo_proceso
      FROM tramites t
-     JOIN estudiantes e ON t.estudiante_id = e.id_estudiante
-     JOIN usuarios u    ON e.usuario_id = u.id_usuario
+     JOIN tipos_proceso tp ON t.tipo_proceso_id = tp.id
+     JOIN estudiantes e    ON t.estudiante_id = e.id_estudiante
+     JOIN usuarios u       ON e.usuario_id = u.id_usuario
      WHERE t.id_tramite = $1`,
     [tramite_id]
   );
   if (tQ.rows.length === 0) throw { status: 404, message: 'Tramite no encontrado' };
   const tr = tQ.rows[0];
+
+  // Guardia: solo Prácticas Preprofesionales admite generación de documentos oficiales.
+  const normProc = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  if (normProc(tr.tipo_proceso) !== 'practicas preprofesionales') {
+    throw { status: 400, message: 'No existen documentos generables para este tipo de proceso.' };
+  }
 
   // 2. Plantilla activa para el tipo solicitado
   const pQ = await pool.query(
@@ -86,9 +94,10 @@ async function generar(tramite_id, datos, usuario_id) {
         linebreaks: true,
       });
 
-      // Siempre se pasan las 8 claves; las que no aplican al tipo reciben ''.
+      // Siempre se pasan todas las claves; las que no aplican al tipo reciben ''.
       doc.render({
         FECHA:      fechaInstitucional(),
+        TITULO:     datos.titulo   || 'Señor',
         GERENTE:    datos.gerente  || '',
         CARGO:      datos.cargo    || '',
         EMPRESA:    datos.empresa  || '',

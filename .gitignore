@@ -3,8 +3,6 @@ node_modules/
 uploads/documentos/*
 uploads/convenios/*
 uploads/generados/*
-plantillas/*.docx
 !uploads/documentos/.gitkeep
 !uploads/convenios/.gitkeep
 !uploads/generados/.gitkeep
-!plantillas/.gitkeep

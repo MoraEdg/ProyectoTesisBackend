@@ -47,12 +47,13 @@ CREATE TABLE tipos_convenio (
 -- ─── CONFIGURACIÓN DE FLUJOS ──────────────────────────────────────────────────
 
 CREATE TABLE plantillas_hito (
-    id                 SERIAL PRIMARY KEY,
-    tipo_proceso_id    INT          NOT NULL,
-    orden              INT          NOT NULL,
-    nombre             VARCHAR(100) NOT NULL,
-    descripcion        TEXT,
-    rol_responsable_id INT          NOT NULL,
+    id                   SERIAL PRIMARY KEY,
+    tipo_proceso_id      INT          NOT NULL,
+    orden                INT          NOT NULL,
+    nombre               VARCHAR(100) NOT NULL,
+    descripcion          TEXT,
+    rol_responsable_id   INT          NOT NULL,
+    condicion_convenio   VARCHAR(20)  NOT NULL DEFAULT 'TODOS',
     FOREIGN KEY (tipo_proceso_id)    REFERENCES tipos_proceso(id),
     FOREIGN KEY (rol_responsable_id) REFERENCES roles(id),
     CONSTRAINT uq_hito_orden UNIQUE(tipo_proceso_id, orden)
@@ -108,7 +109,10 @@ CREATE TABLE tramites (
     tipo_proceso_id INT          NOT NULL,
     periodo_id      INT          NOT NULL,
     estado_id       INT          NOT NULL,
-    fecha_inicio    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    tiene_convenio      BOOLEAN,
+    modalidad           VARCHAR(20),
+    institucion_empresa VARCHAR(255),
+    fecha_inicio        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     fecha_cierre    TIMESTAMP,
     created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -135,6 +139,9 @@ CREATE TABLE hitos (
     FOREIGN KEY (aprobado_por)      REFERENCES usuarios(id_usuario),
     CONSTRAINT uq_hito_unico UNIQUE(tramite_id, plantilla_hito_id)
 );
+
+CREATE INDEX idx_hitos_tramite ON hitos(tramite_id);
+CREATE INDEX idx_hitos_estado  ON hitos(estado_id);
 
 CREATE TABLE documentos (
     id_doc            UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
@@ -175,13 +182,27 @@ CREATE TABLE historial_tramites (
     id_historial UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
     tramite_id   UUID    NOT NULL,
     estado_id    INT     NOT NULL,
-    usuario_id   UUID    NOT NULL,
+    usuario_id   UUID,                -- NULL = cambio automático del sistema
     comentario   TEXT,
     fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tramite_id) REFERENCES tramites(id_tramite),
     FOREIGN KEY (estado_id)  REFERENCES estados(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario)
 );
+
+CREATE TABLE historial_hitos (
+    id_historial UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
+    hito_id      UUID    NOT NULL,
+    estado_id    INT     NOT NULL,
+    usuario_id   UUID,                -- NULL = cambio automático del sistema
+    comentario   TEXT,
+    fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hito_id)    REFERENCES hitos(id_hito),
+    FOREIGN KEY (estado_id)  REFERENCES estados(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario)
+);
+
+CREATE INDEX idx_historial_hitos_hito ON historial_hitos(hito_id);
 
 -- ─── CONVENIOS ────────────────────────────────────────────────────────────────
 
@@ -190,9 +211,10 @@ CREATE TABLE convenios (
     tipo_convenio_id        INT          NOT NULL,
     codigo_convenio         VARCHAR(100) NOT NULL UNIQUE,
     institucion             VARCHAR(255) NOT NULL,
-    otorgado_para           VARCHAR(255),
+    descripcion             TEXT,
     responsable_institucion VARCHAR(255),
-    correo_contacto         VARCHAR(150),
+    direccion               VARCHAR(255),
+    correo_contacto         TEXT,
     telefono_contacto       VARCHAR(50),
     anio                    INT,
     fecha_firma             DATE,
@@ -250,13 +272,17 @@ CREATE INDEX idx_plantillas_activa_tipo
     ON plantillas_documento(tipo_documento_generado_id, activa);
 
 CREATE TABLE documentos_generados (
-    id_documento_generado UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
-    plantilla_documento_id INT    NOT NULL,
-    estudiante_id          UUID   NOT NULL,
-    generado_por           UUID   NOT NULL,
-    ruta_archivo           TEXT   NOT NULL,
+    id_documento_generado  UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
+    plantilla_documento_id INT     NOT NULL,
+    tramite_id             UUID    REFERENCES tramites(id_tramite),
+    estudiante_id          UUID    NOT NULL,
+    generado_por           UUID    NOT NULL,
+    nombre_archivo         VARCHAR(255),
+    ruta_archivo           TEXT    NOT NULL,
     fecha_generacion       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (plantilla_documento_id) REFERENCES plantillas_documento(id),
     FOREIGN KEY (estudiante_id)          REFERENCES estudiantes(id_estudiante),
     FOREIGN KEY (generado_por)           REFERENCES usuarios(id_usuario)
 );
+
+CREATE INDEX idx_docgen_tramite ON documentos_generados(tramite_id);

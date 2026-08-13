@@ -25,7 +25,8 @@ app.use('/api/v1/tramites',    require('./modules/tramites/tramites.routes'));
 app.use('/api/v1/hitos',       require('./modules/hitos/hitos.routes'));
 app.use('/api/v1/documentos',  require('./modules/documentos/documentos.routes'));
 app.use('/api/v1/generacion',  require('./modules/generacion/generacion.routes'));
-// app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
+app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
+app.use('/api/v1/reportes',   require('./modules/reportes/reportes.routes'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
 app.get('/api/v1/health', (req, res) => {

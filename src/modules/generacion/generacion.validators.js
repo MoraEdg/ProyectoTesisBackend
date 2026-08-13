@@ -33,6 +33,12 @@ const reglasGenerar = [
     .if(esCartaPeticion)
     .trim().notEmpty().withMessage('El cargo es obligatorio para la Carta de Peticion')
     .isLength({ max: 150 }).withMessage('El cargo no puede superar 150 caracteres'),
+
+  // Título opcional — se pasa al marcador <<TITULO>> en la plantilla; por defecto "Señor"
+  body('titulo')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 20 }).withMessage('El título no puede superar 20 caracteres'),
 ];
 
 module.exports = { reglasGenerar };

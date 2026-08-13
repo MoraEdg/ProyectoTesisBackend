@@ -47,15 +47,17 @@ INSERT INTO estados (nombre, categoria, descripcion) VALUES
 
 -- ─── TIPOS DE PROCESO ─────────────────────────────────────────────────────────
 INSERT INTO tipos_proceso (nombre, descripcion, activo) VALUES
-  ('Prácticas Preprofesionales', 'Proceso de prácticas en empresa con 5 hitos',                  TRUE),
-  ('Reconocimiento Laboral',     'Reconocimiento de experiencia laboral previa con 2 hitos',     TRUE),
-  ('Convalidación',              'Convalidación de materias por experiencia profesional con 2 hitos', TRUE);
+  ('Prácticas Preprofesionales', 'Proceso de prácticas en empresa: 3 hitos con convenio, 4 sin convenio', TRUE),
+  ('Reconocimiento Laboral',     'Reconocimiento de experiencia laboral previa con 1 hito',               TRUE),
+  ('Convalidación',              'Convalidación de materias por experiencia profesional con 1 hito',       TRUE);
 
 -- ─── TIPOS DE CONVENIO ────────────────────────────────────────────────────────
 INSERT INTO tipos_convenio (nombre, descripcion) VALUES
   ('Marco',      'Convenio general de cooperación interinstitucional'),
   ('Específico', 'Convenio para una carrera o programa específico'),
-  ('Pasantías',  'Convenio exclusivo para prácticas preprofesionales');
+  ('Pasantías',  'Convenio exclusivo para prácticas preprofesionales'),
+  ('PRIVADO',    'Convenio con entidad privada'),
+  ('PÚBLICO',    'Convenio con entidad pública o estatal');
 
 -- ─── PERIODOS ─────────────────────────────────────────────────────────────────
 INSERT INTO periodos (nombre_periodo, fecha_inicio, fecha_fin, activo) VALUES
@@ -74,52 +76,62 @@ SELECT setval(pg_get_serial_sequence('tipos_documento_generado', 'id'), 4);
 
 -- ─── PLANTILLAS DE HITO ───────────────────────────────────────────────────────
 
--- Prácticas Preprofesionales — 3 hitos (decisión #2, validada con el Coordinador)
-INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id) VALUES
+-- Prácticas Preprofesionales — 4 hitos máx. (1 SIN_CONVENIO + 3 TODOS)
+INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id, condicion_convenio) VALUES
+  (
+    (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
+    0, 'Carta de Intención',
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'SIN_CONVENIO'
+  ),
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
     1, 'Formalización',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'TODOS'
   ),
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
     2, 'Seguimiento',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'TODOS'
   ),
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Prácticas Preprofesionales'),
     3, 'Finalización',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'TODOS'
   );
 
--- Reconocimiento Laboral — 2 hitos
-INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id) VALUES
+-- Reconocimiento Laboral — 1 hito
+INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id, condicion_convenio) VALUES
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Reconocimiento Laboral'),
     1, 'Solicitud de Reconocimiento',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
-  ),
-  (
-    (SELECT id FROM tipos_proceso WHERE nombre = 'Reconocimiento Laboral'),
-    2, 'Resolución de Reconocimiento',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'TODOS'
   );
 
--- Convalidación — 2 hitos
-INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id) VALUES
+-- Convalidación — 1 hito
+INSERT INTO plantillas_hito (tipo_proceso_id, orden, nombre, rol_responsable_id, condicion_convenio) VALUES
   (
     (SELECT id FROM tipos_proceso WHERE nombre = 'Convalidación'),
     1, 'Solicitud de Convalidación',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
-  ),
-  (
-    (SELECT id FROM tipos_proceso WHERE nombre = 'Convalidación'),
-    2, 'Resolución de Convalidación',
-    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    'TODOS'
   );
 
 -- ─── TIPOS DE DOCUMENTO (ligados a cada plantilla de hito) ────────────────────
 -- Cada hito define qué documentos debe subir el estudiante.
+
+-- PP Hito 0 — Carta de Intención (solo empresas SIN convenio)
+INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
+  (
+    (SELECT ph.id FROM plantillas_hito ph
+     JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
+     WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 0),
+    'Carta de Intención (Empresa sin Convenio)', '.pdf', 10, TRUE
+  );
 
 -- PP Hito 1 — Formalización (nombre oficial congelado)
 INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
@@ -127,7 +139,7 @@ INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tam
     (SELECT ph.id FROM plantillas_hito ph
      JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
      WHERE tp.nombre = 'Prácticas Preprofesionales' AND ph.orden = 1),
-    'Carta de Intención (Aceptación de Empresa)', '.pdf', 10, TRUE
+    'FPP2 (Carta de Formalización)', '.pdf', 10, TRUE
   );
 
 -- PP Hito 2 — Seguimiento (nombre oficial congelado)
@@ -157,15 +169,6 @@ INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tam
     'Solicitud de Reconocimiento Laboral', '.pdf,.docx', 10, TRUE
   );
 
--- RL Hito 2 — Resolución de Reconocimiento
-INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
-  (
-    (SELECT ph.id FROM plantillas_hito ph
-     JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
-     WHERE tp.nombre = 'Reconocimiento Laboral' AND ph.orden = 2),
-    'Resolución de Reconocimiento Laboral', '.pdf', 10, TRUE
-  );
-
 -- Conv Hito 1 — Solicitud de Convalidación
 INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
   (
@@ -173,15 +176,6 @@ INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tam
      JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
      WHERE tp.nombre = 'Convalidación' AND ph.orden = 1),
     'Solicitud de Convalidación', '.pdf,.docx', 10, TRUE
-  );
-
--- Conv Hito 2 — Resolución de Convalidación
-INSERT INTO tipos_documento (plantilla_hito_id, nombre, extension_permitida, tamano_maximo_mb, obligatorio) VALUES
-  (
-    (SELECT ph.id FROM plantillas_hito ph
-     JOIN tipos_proceso tp ON ph.tipo_proceso_id = tp.id
-     WHERE tp.nombre = 'Convalidación' AND ph.orden = 2),
-    'Resolución de Convalidación', '.pdf', 10, TRUE
   );
 
 -- ─── PLANTILLAS DE DOCUMENTO (para generación automática de cartas) ───────────
@@ -199,6 +193,78 @@ INSERT INTO plantillas_documento (tipo_documento_generado_id, nombre, descripcio
   (4, 'FPP3 plantilla',
       'Formato de seguimiento vacio para llenar y firmar manualmente',
       'plantillas/fpp3.docx', TRUE);
+
+-- ─── CONVENIOS INSTITUCIONALES ────────────────────────────────────────────────
+-- Datos reales de convenios de la UISEK para demostración del módulo.
+
+-- Convenio 1 — Abbott Laboratorios del Ecuador
+INSERT INTO convenios (
+  tipo_convenio_id, codigo_convenio, institucion, descripcion,
+  responsable_institucion, direccion, correo_contacto, telefono_contacto,
+  otorgado_para, anio, fecha_firma, fecha_finalizacion, duracion,
+  estado_id, proponente_universidad, posee_archivo_fisico, posee_archivo_digital
+) VALUES (
+  (SELECT id FROM tipos_convenio WHERE nombre = 'PRIVADO'),
+  'DRII-021-2021',
+  'Abbott Laboratorios del Ecuador',
+  'Convenio específico para desarrollar pasantías, prácticas pre profesionales y ofertas laborables',
+  'Fanny Hurtado L.',
+  'República de El Salvador N34-493 y Portugal',
+  'fanny.hurtado@abbott.com',
+  '3992549',
+  'Articular las capacidades y realizar acciones institucionales conjuntas que permitan la ejecución de programas y proyectos específicos para fomentar el emprendimiento e innovación',
+  2021, '2021-03-02', '2022-03-02',
+  '1 año // renovación automática por el mismo periodo',
+  (SELECT id FROM estados WHERE nombre = 'CADUCADO' AND categoria = 'CONVENIO'),
+  'La empresa solicitó el convenio',
+  FALSE, TRUE
+);
+
+-- Convenio 2 — Agencia Nacional de Tránsito (ANT)
+INSERT INTO convenios (
+  tipo_convenio_id, codigo_convenio, institucion, descripcion,
+  responsable_institucion, direccion, correo_contacto, telefono_contacto,
+  otorgado_para, anio, fecha_firma, fecha_finalizacion, duracion,
+  estado_id, proponente_universidad, posee_archivo_fisico, posee_archivo_digital
+) VALUES (
+  (SELECT id FROM tipos_convenio WHERE nombre = 'PÚBLICO'),
+  'PPP-004-2023',
+  'Agencia Nacional de Regulación y Control del Transporte Terrestre, Tránsito y Seguridad Vial (ANRCTTTSV)',
+  'Convenio específico para desarrollar pasantías, prácticas pre profesionales y ofertas laborables',
+  'Hernán Pontón (Subdirector de la ANT)',
+  'Av. Antonio José de Sucre y José Sánchez',
+  'practicas.ant@gmail.com; cristina.bustos@ant.gob.ec; hernan.ponton@ant.gob.ec',
+  '023828890 ext.2420',
+  'Desarrollo de PPP para las carreras de grado de la UISEK',
+  2023, '2023-01-12', '2029-01-12',
+  '3 años // renovación mediante comunicación escrita con al menos treinta (30) días previos a la terminación',
+  (SELECT id FROM estados WHERE nombre = 'VIGENTE' AND categoria = 'CONVENIO'),
+  'Dirección de Relaciones Internacionales e Interinstitucionales',
+  FALSE, TRUE
+);
+
+-- Convenio 3 — Agrocomercial Gloclaface Cía. Ltda.
+INSERT INTO convenios (
+  tipo_convenio_id, codigo_convenio, institucion, descripcion,
+  responsable_institucion, direccion, correo_contacto, telefono_contacto,
+  otorgado_para, anio, fecha_firma, fecha_finalizacion, duracion,
+  estado_id, proponente_universidad, posee_archivo_fisico, posee_archivo_digital
+) VALUES (
+  (SELECT id FROM tipos_convenio WHERE nombre = 'PRIVADO'),
+  'DRII-002-2021',
+  'Agrocomercial Gloclaface Cía. Ltda.',
+  'Convenio específico para desarrollar pasantías, prácticas pre profesionales y ofertas laborables',
+  'Gerente General',
+  'Vicente Rocafuerte E1-79 y Cacha',
+  'gerencia@agrocomercialgloclaface.com.ec',
+  '2063554',
+  'Articular las capacidades y realizar acciones institucionales conjuntas que permitan la ejecución de programas y proyectos específicos para fomentar el emprendimiento e innovación',
+  2020, '2020-01-05', '2021-01-05',
+  '1 año // renovación automática por el mismo periodo',
+  (SELECT id FROM estados WHERE nombre = 'CADUCADO' AND categoria = 'CONVENIO'),
+  NULL,
+  FALSE, TRUE
+);
 
 -- ─── USUARIO ADMINISTRADOR (Coordinador de prueba) ───────────────────────────
 -- Contraseña: Admin1234 (hash bcrypt cost 10)

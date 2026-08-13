@@ -2,6 +2,10 @@ const pool = require('../../config/db');
 const { transicionValida } = require('../../helpers/estados');
 const { generarCodigo } = require('../../helpers/codigoTramite');
 
+// Normaliza un nombre de proceso: quita tildes, pasa a minúsculas y trim.
+// Permite comparar 'Prácticas Preprofesionales' sin depender de tildes ni mayúsculas.
+const normProc = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
 async function listar({ pagina = 1, por_pagina = 20, tipo_proceso_id, estado, periodo_id, id_estudiante = null }) {
   pagina = Math.max(1, parseInt(pagina) || 1);
   por_pagina = Math.min(100, Math.max(1, parseInt(por_pagina) || 20));
@@ -41,6 +45,7 @@ async function listar({ pagina = 1, por_pagina = 20, tipo_proceso_id, estado, pe
     `SELECT
        t.id_tramite, t.codigo_tramite, t.fecha_inicio, t.fecha_cierre,
        t.created_at, t.updated_at,
+       t.tiene_convenio, t.modalidad,
        tp.nombre AS tipo_proceso,
        per.nombre_periodo AS periodo,
        es.nombre AS estado,
@@ -69,6 +74,7 @@ async function obtenerPorId(id_tramite) {
     `SELECT
        t.id_tramite, t.codigo_tramite, t.fecha_inicio, t.fecha_cierre,
        t.created_at, t.updated_at,
+       t.tiene_convenio, t.modalidad, t.institucion_empresa,
        tp.id AS tipo_proceso_id, tp.nombre AS tipo_proceso,
        per.id AS periodo_id, per.nombre_periodo AS periodo,
        es.id AS estado_id, es.nombre AS estado,
@@ -86,7 +92,7 @@ async function obtenerPorId(id_tramite) {
   return rows[0] ?? null;
 }
 
-async function crear({ estudiante_id, tipo_proceso_id, periodo_id }, usuario_id) {
+async function crear({ estudiante_id, tipo_proceso_id, periodo_id, tiene_convenio, modalidad, institucion_empresa }, usuario_id) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -101,6 +107,25 @@ async function crear({ estudiante_id, tipo_proceso_id, periodo_id }, usuario_id)
     );
     if (proc.rows.length === 0) throw { status: 400, message: 'El tipo de proceso no es válido o está inactivo' };
     const nombreProceso = proc.rows[0].nombre;
+
+    const esPracticas = normProc(nombreProceso) === 'practicas preprofesionales';
+    if (esPracticas && tiene_convenio === undefined) {
+      throw { status: 400, message: 'Para Prácticas Preprofesionales debe indicar si la empresa tiene convenio' };
+    }
+    if (esPracticas && !modalidad) {
+      throw { status: 400, message: 'Para Prácticas Preprofesionales debe indicar la modalidad (PRACTICA o PASANTIA)' };
+    }
+
+    // Para procesos que no son Prácticas, tiene_convenio y modalidad se ignoran (null en BD)
+    const convenio = esPracticas ? (tiene_convenio ?? null) : null;
+    const mod      = esPracticas ? (modalidad      ?? null) : null;
+
+    // institucion_empresa: obligatorio en PP, opcional en RL, null en Convalidación
+    const esConvalidacion = normProc(nombreProceso) === 'convalidacion';
+    const inst            = esConvalidacion ? null : (institucion_empresa?.trim() || null);
+    if (esPracticas && !inst) {
+      throw { status: 400, message: 'Para Prácticas Preprofesionales debe indicar la institución o empresa' };
+    }
 
     const per = await client.query(
       `SELECT 1 FROM periodos WHERE id = $1 AND activo = TRUE`, [periodo_id]
@@ -131,10 +156,10 @@ async function crear({ estudiante_id, tipo_proceso_id, periodo_id }, usuario_id)
     const codigo_tramite = await generarCodigo(client, nombreProceso);
 
     const ins = await client.query(
-      `INSERT INTO tramites (codigo_tramite, estudiante_id, tipo_proceso_id, periodo_id, estado_id)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO tramites (codigo_tramite, estudiante_id, tipo_proceso_id, periodo_id, estado_id, tiene_convenio, modalidad, institucion_empresa)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id_tramite`,
-      [codigo_tramite, estudiante_id, tipo_proceso_id, periodo_id, estado_id]
+      [codigo_tramite, estudiante_id, tipo_proceso_id, periodo_id, estado_id, convenio, mod, inst]
     );
     const id_tramite = ins.rows[0].id_tramite;
 
@@ -153,9 +178,18 @@ async function crear({ estudiante_id, tipo_proceso_id, periodo_id }, usuario_id)
     }
     const estadoHitoPendienteId = estadoHitoPend.rows[0].id;
 
+    // Filtrar hitos según condicion_convenio. Para procesos no-Prácticas convenio=null,
+    // lo que hace que ($2 = FALSE) y ($2 = TRUE) evalúen a NULL → solo TODOS se instancia.
     const plantillas = await client.query(
-      `SELECT id FROM plantillas_hito WHERE tipo_proceso_id = $1 ORDER BY orden ASC`,
-      [tipo_proceso_id]
+      `SELECT id FROM plantillas_hito
+       WHERE tipo_proceso_id = $1
+         AND (
+           condicion_convenio = 'TODOS'
+           OR ($2 = FALSE AND condicion_convenio = 'SIN_CONVENIO')
+           OR ($2 = TRUE  AND condicion_convenio = 'CON_CONVENIO')
+         )
+       ORDER BY orden ASC`,
+      [tipo_proceso_id, convenio]
     );
     if (plantillas.rows.length === 0) {
       throw { status: 400, message: 'El tipo de proceso no tiene hitos definidos. Contacte al coordinador.' };

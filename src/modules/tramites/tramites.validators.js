@@ -12,6 +12,16 @@ const reglasCrear = [
   body('periodo_id')
     .notEmpty().withMessage('El período es obligatorio')
     .isInt({ min: 1 }).withMessage('El período no es válido'),
+  body('tiene_convenio')
+    .optional()
+    .isBoolean().withMessage('tiene_convenio debe ser true o false'),
+  body('modalidad')
+    .optional()
+    .isIn(['PRACTICA', 'PASANTIA']).withMessage('modalidad debe ser PRACTICA o PASANTIA'),
+  body('institucion_empresa')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 255 }).withMessage('La institución/empresa no puede superar 255 caracteres'),
 ];
 
 const reglasCambiarEstado = [
