@@ -88,7 +88,7 @@ src/
 
 | Proceso                    | Hitos activos | Condición de hitos             |
 |---------------------------|---------------|-------------------------------|
-| Prácticas Preprofesionales | 3 (sin convenio) / 4 (con convenio) | Hito ord=0 solo SIN_CONVENIO |
+| Prácticas Preprofesionales | 4 (sin convenio) / 3 (con convenio) | Hito ord=0 solo SIN_CONVENIO |
 | Reconocimiento Laboral     | 1             | —                             |
 | Convalidación              | 1             | —                             |
 
