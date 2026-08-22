@@ -97,7 +97,6 @@ CREATE TABLE estudiantes (
     id_estudiante UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
     usuario_id    UUID    NOT NULL UNIQUE,
     carrera       VARCHAR(150) NOT NULL,
-    matricula     VARCHAR(50)  NOT NULL UNIQUE,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario)
 );
@@ -212,6 +211,7 @@ CREATE TABLE convenios (
     codigo_convenio         VARCHAR(100) NOT NULL UNIQUE,
     institucion             VARCHAR(255) NOT NULL,
     descripcion             TEXT,
+    otorgado_para           TEXT,
     responsable_institucion VARCHAR(255),
     direccion               VARCHAR(255),
     correo_contacto         TEXT,
@@ -238,16 +238,6 @@ CREATE TABLE convenios (
         OR fecha_finalizacion IS NULL
         OR fecha_finalizacion >= fecha_firma
     )
-);
-
-CREATE TABLE archivos_convenio (
-    id_archivo      UUID    PRIMARY KEY  DEFAULT gen_random_uuid(),
-    convenio_id     UUID         NOT NULL,
-    nombre_original VARCHAR(255) NOT NULL,
-    nombre_sistema  VARCHAR(255) NOT NULL,
-    ruta            TEXT         NOT NULL,
-    fecha_subida    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (convenio_id) REFERENCES convenios(id_convenio)
 );
 
 -- ─── GENERACIÓN ───────────────────────────────────────────────────────────────
@@ -286,3 +276,26 @@ CREATE TABLE documentos_generados (
 );
 
 CREATE INDEX idx_docgen_tramite ON documentos_generados(tramite_id);
+
+-- ─── PERMISOS RBAC ────────────────────────────────────────────────────────────
+
+CREATE TABLE funcionalidades (
+    id          SERIAL       PRIMARY KEY,
+    modulo      VARCHAR(50)  NOT NULL,
+    accion      VARCHAR(100) NOT NULL,
+    clave       VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    CONSTRAINT uq_funcionalidades_clave         UNIQUE (clave),
+    CONSTRAINT uq_funcionalidades_modulo_accion UNIQUE (modulo, accion)
+);
+
+CREATE TABLE roles_funcionalidades (
+    rol_id           INT     NOT NULL,
+    funcionalidad_id INT     NOT NULL,
+    habilitado       BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_roles_funcionalidades PRIMARY KEY (rol_id, funcionalidad_id),
+    CONSTRAINT fk_rf_rol            FOREIGN KEY (rol_id)           REFERENCES roles(id),
+    CONSTRAINT fk_rf_funcionalidad  FOREIGN KEY (funcionalidad_id) REFERENCES funcionalidades(id)
+);
+
+CREATE INDEX idx_roles_func_rol ON roles_funcionalidades (rol_id);

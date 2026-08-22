@@ -9,7 +9,7 @@ const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Encabezados obligatorios de la plantilla oficial (forma normalizada)
 const ENCABEZADOS_REQUERIDOS = [
-  'cedula', 'apellidos', 'nombres', 'correo', 'matricula', 'carrera',
+  'cedula', 'apellidos', 'nombres', 'correo', 'carrera',
 ];
 
 /**
@@ -46,8 +46,8 @@ async function listar({ pagina = 1, por_pagina = 20, busqueda = '', carrera = ''
 
   if (busqueda) {
     condiciones.push(`(
-      u.nombres    ILIKE $${idx} OR u.apellidos ILIKE $${idx}
-      OR u.cedula  ILIKE $${idx} OR e.matricula ILIKE $${idx}
+      u.nombres   ILIKE $${idx} OR u.apellidos ILIKE $${idx}
+      OR u.cedula ILIKE $${idx}
     )`);
     params.push(`%${busqueda}%`);
     idx++;
@@ -75,7 +75,7 @@ async function listar({ pagina = 1, por_pagina = 20, busqueda = '', carrera = ''
 
   const dataQuery = await pool.query(
     `SELECT
-       e.id_estudiante, e.carrera, e.matricula, e.created_at,
+       e.id_estudiante, e.carrera, e.created_at,
        u.id_usuario, u.nombres, u.apellidos, u.cedula,
        u.correo, u.telefono, u.estado
      FROM estudiantes e
@@ -101,7 +101,7 @@ async function listar({ pagina = 1, por_pagina = 20, busqueda = '', carrera = ''
 async function obtenerPorId(id_estudiante) {
   const { rows } = await pool.query(
     `SELECT
-       e.id_estudiante, e.carrera, e.matricula, e.created_at,
+       e.id_estudiante, e.carrera, e.created_at,
        u.id_usuario, u.nombres, u.apellidos, u.cedula,
        u.correo, u.telefono, u.nombre_usuario, u.estado
      FROM estudiantes e
@@ -114,7 +114,7 @@ async function obtenerPorId(id_estudiante) {
 
 // ─── REGISTRAR (transacción) ──────────────────────────────────────────────────
 async function registrar(datos) {
-  const { nombres, apellidos, cedula, correo, telefono, carrera, matricula } = datos;
+  const { nombres, apellidos, cedula, correo, telefono, carrera } = datos;
 
   const client = await pool.connect();
   try {
@@ -122,15 +122,13 @@ async function registrar(datos) {
 
     const dup = await client.query(
       `SELECT
-         EXISTS(SELECT 1 FROM usuarios    WHERE cedula    = $1) AS cedula_existe,
-         EXISTS(SELECT 1 FROM usuarios    WHERE correo    = $2) AS correo_existe,
-         EXISTS(SELECT 1 FROM estudiantes WHERE matricula = $3) AS matricula_existe`,
-      [cedula, correo, matricula]
+         EXISTS(SELECT 1 FROM usuarios WHERE cedula = $1) AS cedula_existe,
+         EXISTS(SELECT 1 FROM usuarios WHERE correo = $2) AS correo_existe`,
+      [cedula, correo]
     );
-    const { cedula_existe, correo_existe, matricula_existe } = dup.rows[0];
-    if (cedula_existe)    throw { status: 400, message: 'Ya existe un usuario con esa cédula' };
-    if (correo_existe)    throw { status: 400, message: 'Ya existe un usuario con ese correo' };
-    if (matricula_existe) throw { status: 400, message: 'Ya existe un estudiante con esa matrícula' };
+    const { cedula_existe, correo_existe } = dup.rows[0];
+    if (cedula_existe) throw { status: 400, message: 'Ya existe un usuario con esa cédula' };
+    if (correo_existe) throw { status: 400, message: 'Ya existe un usuario con ese correo' };
 
     // Credenciales iniciales: usuario = cédula, contraseña = cédula
     const hash   = await bcrypt.hash(cedula, SALT_ROUNDS);
@@ -147,10 +145,10 @@ async function registrar(datos) {
     const usuario_id = usuarioInsert.rows[0].id_usuario;
 
     const estudianteInsert = await client.query(
-      `INSERT INTO estudiantes (usuario_id, carrera, matricula)
-       VALUES ($1, $2, $3)
+      `INSERT INTO estudiantes (usuario_id, carrera)
+       VALUES ($1, $2)
        RETURNING id_estudiante`,
-      [usuario_id, carrera, matricula]
+      [usuario_id, carrera]
     );
 
     await client.query('COMMIT');
@@ -160,7 +158,7 @@ async function registrar(datos) {
       id_usuario:    usuario_id,
       nombres, apellidos, cedula, correo,
       telefono: telefono || null,
-      carrera, matricula,
+      carrera,
     };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -172,7 +170,7 @@ async function registrar(datos) {
 
 // ─── EDITAR ───────────────────────────────────────────────────────────────────
 async function editar(id_estudiante, datos) {
-  const { nombres, apellidos, correo, telefono, carrera, matricula } = datos;
+  const { nombres, apellidos, correo, telefono, carrera } = datos;
 
   const client = await pool.connect();
   try {
@@ -194,15 +192,6 @@ async function editar(id_estudiante, datos) {
         throw { status: 400, message: 'El correo ya está en uso por otro usuario' };
     }
 
-    if (matricula) {
-      const matriculaDup = await client.query(
-        `SELECT 1 FROM estudiantes WHERE matricula = $1 AND id_estudiante <> $2`,
-        [matricula, id_estudiante]
-      );
-      if (matriculaDup.rows.length > 0)
-        throw { status: 400, message: 'La matrícula ya está en uso por otro estudiante' };
-    }
-
     await client.query(
       `UPDATE usuarios SET
          nombres    = COALESCE($1, nombres),
@@ -214,13 +203,12 @@ async function editar(id_estudiante, datos) {
       [nombres, apellidos, correo, telefono, usuario_id]
     );
 
-    if (carrera || matricula) {
+    if (carrera) {
       await client.query(
         `UPDATE estudiantes SET
-           carrera   = COALESCE($1, carrera),
-           matricula = COALESCE($2, matricula)
-         WHERE id_estudiante = $3`,
-        [carrera, matricula, id_estudiante]
+           carrera = COALESCE($1, carrera)
+         WHERE id_estudiante = $2`,
+        [carrera, id_estudiante]
       );
     }
 
@@ -285,9 +273,8 @@ async function importarDesdeExcel(rutaArchivo) {
   const reporte = { total: filas.length, exitosos: 0, omitidos: [], errores: [] };
 
   // Sets para detectar duplicados dentro del mismo archivo
-  const cedulasVistas    = new Set();
-  const correosVistos    = new Set();
-  const matriculasVistas = new Set();
+  const cedulasVistas = new Set();
+  const correosVistos = new Set();
 
   const client = await pool.connect();
   try {
@@ -300,12 +287,11 @@ async function importarDesdeExcel(rutaArchivo) {
       const apellidos = celda(fila, 'apellidos');
       const nombres   = celda(fila, 'nombres');
       const correo    = celda(fila, 'correo');
-      const matricula = celda(fila, 'matricula');
       const carrera   = celda(fila, 'carrera');
       const telefono  = celda(fila, 'telefono');
 
       // Campos obligatorios
-      if (!cedula || !apellidos || !nombres || !correo || !matricula || !carrera) {
+      if (!cedula || !apellidos || !nombres || !correo || !carrera) {
         reporte.omitidos.push({ fila: numFila, motivo: 'Campos obligatorios vacíos' });
         continue;
       }
@@ -332,29 +318,23 @@ async function importarDesdeExcel(rutaArchivo) {
         reporte.omitidos.push({ fila: numFila, motivo: 'Correo duplicado en el archivo' });
         continue;
       }
-      if (matriculasVistas.has(matricula)) {
-        reporte.omitidos.push({ fila: numFila, motivo: 'Matrícula duplicada en el archivo' });
-        continue;
-      }
 
       try {
         await client.query('BEGIN');
 
         const dup = await client.query(
           `SELECT
-             EXISTS(SELECT 1 FROM usuarios    WHERE cedula    = $1) AS cedula_existe,
-             EXISTS(SELECT 1 FROM usuarios    WHERE correo    = $2) AS correo_existe,
-             EXISTS(SELECT 1 FROM estudiantes WHERE matricula = $3) AS matricula_existe`,
-          [cedula, correo, matricula]
+             EXISTS(SELECT 1 FROM usuarios WHERE cedula = $1) AS cedula_existe,
+             EXISTS(SELECT 1 FROM usuarios WHERE correo = $2) AS correo_existe`,
+          [cedula, correo]
         );
-        const { cedula_existe, correo_existe, matricula_existe } = dup.rows[0];
+        const { cedula_existe, correo_existe } = dup.rows[0];
 
-        if (cedula_existe || correo_existe || matricula_existe) {
+        if (cedula_existe || correo_existe) {
           await client.query('ROLLBACK');
           const motivos = [];
-          if (cedula_existe)    motivos.push('cédula');
-          if (correo_existe)    motivos.push('correo');
-          if (matricula_existe) motivos.push('matrícula');
+          if (cedula_existe) motivos.push('cédula');
+          if (correo_existe) motivos.push('correo');
           reporte.omitidos.push({ fila: numFila, motivo: `Duplicado en BD (${motivos.join(', ')})` });
           continue;
         }
@@ -370,15 +350,14 @@ async function importarDesdeExcel(rutaArchivo) {
         );
 
         await client.query(
-          `INSERT INTO estudiantes (usuario_id, carrera, matricula) VALUES ($1, $2, $3)`,
-          [usuarioInsert.rows[0].id_usuario, carrera, matricula]
+          `INSERT INTO estudiantes (usuario_id, carrera) VALUES ($1, $2)`,
+          [usuarioInsert.rows[0].id_usuario, carrera]
         );
 
         await client.query('COMMIT');
 
         cedulasVistas.add(cedula);
         correosVistos.add(correoLower);
-        matriculasVistas.add(matricula);
         reporte.exitosos++;
       } catch (errFila) {
         await client.query('ROLLBACK');

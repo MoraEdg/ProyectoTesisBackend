@@ -53,11 +53,8 @@ INSERT INTO tipos_proceso (nombre, descripcion, activo) VALUES
 
 -- ─── TIPOS DE CONVENIO ────────────────────────────────────────────────────────
 INSERT INTO tipos_convenio (nombre, descripcion) VALUES
-  ('Marco',      'Convenio general de cooperación interinstitucional'),
-  ('Específico', 'Convenio para una carrera o programa específico'),
-  ('Pasantías',  'Convenio exclusivo para prácticas preprofesionales'),
-  ('PRIVADO',    'Convenio con entidad privada'),
-  ('PÚBLICO',    'Convenio con entidad pública o estatal');
+  ('PRIVADO', 'Convenio con entidad privada'),
+  ('PÚBLICO', 'Convenio con entidad pública o estatal');
 
 -- ─── PERIODOS ─────────────────────────────────────────────────────────────────
 INSERT INTO periodos (nombre_periodo, fecha_inicio, fecha_fin, activo) VALUES
@@ -278,4 +275,137 @@ VALUES (
   'admin',
   '$2b$10$zLVpe8OKod3Ookc9v7k1I.weAZ5wrlLy7AubjIhM.lRPStKwWvA86',
   (SELECT id FROM roles WHERE nombre_rol = 'Coordinador')
+);
+
+-- ─── PERMISOS RBAC ────────────────────────────────────────────────────────────
+-- Catálogo de 33 funcionalidades + matriz inicial por rol.
+-- Ejecutar DESPUÉS del bloque de usuarios (depende de roles ya insertados).
+
+INSERT INTO funcionalidades (modulo, accion, clave, descripcion) VALUES
+
+  -- Módulo: catalogos
+  ('catalogos', 'ver_roles',              'catalogos.ver_roles',
+   'Ver listado de roles del sistema'),
+  ('catalogos', 'ver_tipos_convenio',     'catalogos.ver_tipos_convenio',
+   'Ver tipos de convenio disponibles'),
+  ('catalogos', 'ver_tipos_doc_generado', 'catalogos.ver_tipos_doc_generado',
+   'Ver tipos de documentos generados disponibles'),
+
+  -- Módulo: estudiantes
+  ('estudiantes', 'listar',     'estudiantes.listar',     'Ver listado de estudiantes'),
+  ('estudiantes', 'ver',        'estudiantes.ver',        'Ver detalle de un estudiante'),
+  ('estudiantes', 'crear',      'estudiantes.crear',      'Registrar un nuevo estudiante'),
+  ('estudiantes', 'editar',     'estudiantes.editar',     'Editar datos de un estudiante existente'),
+  ('estudiantes', 'desactivar', 'estudiantes.desactivar', 'Desactivar un estudiante en el sistema'),
+  ('estudiantes', 'importar',   'estudiantes.importar',   'Importar estudiantes desde archivo Excel'),
+
+  -- Módulo: tramites
+  ('tramites', 'crear',              'tramites.crear',              'Crear un nuevo trámite'),
+  ('tramites', 'cambiar_estado',     'tramites.cambiar_estado',     'Cambiar el estado de un trámite'),
+  ('tramites', 'cerrar',             'tramites.cerrar',             'Cerrar formalmente un trámite'),
+  ('tramites', 'generar_documento',  'tramites.generar_documento',  'Generar documentos Word a partir de plantillas'),
+  ('tramites', 'ver_docs_generados', 'tramites.ver_docs_generados', 'Ver documentos generados de un trámite'),
+  ('tramites', 'listar',             'tramites.listar',             'Ver listado de trámites (el alcance depende del rol)'),
+  ('tramites', 'ver',                'tramites.ver',                'Ver detalle de un trámite (el acceso depende de propiedad)'),
+  ('tramites', 'ver_historial',      'tramites.ver_historial',      'Ver historial de estados de un trámite'),
+
+  -- Módulo: hitos
+  ('hitos', 'cambiar_estado', 'hitos.cambiar_estado', 'Cambiar el estado de un hito'),
+  ('hitos', 'ver',            'hitos.ver',            'Ver detalle de un hito o listar hitos de un trámite'),
+  ('hitos', 'ver_historial',  'hitos.ver_historial',  'Ver historial de estados de un hito'),
+
+  -- Módulo: documentos
+  ('documentos', 'aprobar',           'documentos.aprobar',           'Aprobar un documento subido'),
+  ('documentos', 'observar',          'documentos.observar',          'Emitir una observación sobre un documento'),
+  ('documentos', 'subir',             'documentos.subir',             'Subir un documento a un hito'),
+  ('documentos', 'ver',               'documentos.ver',               'Ver detalle o listar documentos de un hito'),
+  ('documentos', 'descargar',         'documentos.descargar',         'Descargar un documento del sistema'),
+  ('documentos', 'ver_observaciones', 'documentos.ver_observaciones', 'Ver las observaciones emitidas sobre un documento'),
+
+  -- Módulo: generacion
+  ('generacion', 'ver_tipos', 'generacion.ver_tipos', 'Ver tipos de documentos generables'),
+  ('generacion', 'descargar', 'generacion.descargar', 'Descargar un documento generado'),
+
+  -- Módulo: reportes
+  ('reportes', 'dashboard',     'reportes.dashboard',     'Ver el dashboard con estadísticas del sistema'),
+  ('reportes', 'planificacion', 'reportes.planificacion', 'Ver el reporte de planificación académica'),
+
+  -- Módulo: convenios
+  ('convenios', 'ver_lista',            'convenios.ver_lista',
+   'Ver el listado de convenios institucionales'),
+  ('convenios', 'ver_detalle_sensible', 'convenios.ver_detalle_sensible',
+   'Ver campos sensibles del convenio: contacto, dirección, observaciones'),
+
+  -- Módulo: settings
+  ('settings', 'administrar', 'settings.administrar',
+   'Administrar la matriz de permisos del sistema');
+
+
+-- ── Coordinador — acceso completo al sistema operativo ───────────────────────
+INSERT INTO roles_funcionalidades (rol_id, funcionalidad_id, habilitado)
+SELECT
+    (SELECT id FROM roles WHERE nombre_rol = 'Coordinador'),
+    f.id,
+    TRUE
+FROM funcionalidades f
+WHERE f.clave IN (
+    'catalogos.ver_roles', 'catalogos.ver_tipos_convenio', 'catalogos.ver_tipos_doc_generado',
+    'estudiantes.listar', 'estudiantes.ver', 'estudiantes.crear',
+    'estudiantes.editar', 'estudiantes.desactivar', 'estudiantes.importar',
+    'tramites.crear', 'tramites.cambiar_estado', 'tramites.cerrar',
+    'tramites.generar_documento', 'tramites.ver_docs_generados',
+    'tramites.listar', 'tramites.ver', 'tramites.ver_historial',
+    'hitos.cambiar_estado', 'hitos.ver', 'hitos.ver_historial',
+    'documentos.aprobar', 'documentos.observar', 'documentos.subir',
+    'documentos.ver', 'documentos.descargar', 'documentos.ver_observaciones',
+    'generacion.ver_tipos', 'generacion.descargar',
+    'reportes.dashboard', 'reportes.planificacion',
+    'convenios.ver_lista', 'convenios.ver_detalle_sensible',
+    'settings.administrar'
+);
+
+
+-- ── Estudiante — acceso a sus propios trámites y documentos ──────────────────
+INSERT INTO roles_funcionalidades (rol_id, funcionalidad_id, habilitado)
+SELECT
+    (SELECT id FROM roles WHERE nombre_rol = 'Estudiante'),
+    f.id,
+    TRUE
+FROM funcionalidades f
+WHERE f.clave IN (
+    'catalogos.ver_tipos_doc_generado',
+    'tramites.listar', 'tramites.ver', 'tramites.ver_historial',
+    'hitos.ver', 'hitos.ver_historial',
+    'documentos.subir', 'documentos.ver', 'documentos.descargar',
+    'documentos.ver_observaciones',
+    'convenios.ver_lista'
+);
+
+
+-- ── Director — consulta de convenios y catálogo tipos-convenio ────────────────
+-- (D-ROLES-FUT = A: sin acceso frontend por ahora)
+INSERT INTO roles_funcionalidades (rol_id, funcionalidad_id, habilitado)
+SELECT
+    (SELECT id FROM roles WHERE nombre_rol = 'Director'),
+    f.id,
+    TRUE
+FROM funcionalidades f
+WHERE f.clave IN (
+    'catalogos.ver_tipos_convenio',
+    'convenios.ver_lista',
+    'convenios.ver_detalle_sensible'
+);
+
+
+-- ── Decano — consulta de convenios ───────────────────────────────────────────
+-- (D-ROLES-FUT = A: sin acceso frontend por ahora)
+INSERT INTO roles_funcionalidades (rol_id, funcionalidad_id, habilitado)
+SELECT
+    (SELECT id FROM roles WHERE nombre_rol = 'Decano'),
+    f.id,
+    TRUE
+FROM funcionalidades f
+WHERE f.clave IN (
+    'convenios.ver_lista',
+    'convenios.ver_detalle_sensible'
 );

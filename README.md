@@ -3,11 +3,10 @@
 **Autor:** Edgar Mora  
 **Proyecto de Tesis — Universidad SEK**
 
-| Recurso              | Enlace                                                                             |
-| -------------------- | ---------------------------------------------------------------------------------- |
-| Repositorio Backend  | https://github.com/MoraEdg/ProyectoTesisBackend.git                                |
-| Repositorio Frontend | https://github.com/MoraEdg/ProyectoTesisFrontend.git                               |
-| Tablero Jira         | https://edgarmoratesis.atlassian.net/jira/software/projects/SCRUM/boards/1/backlog |
+| Recurso              | Enlace                                                |
+| -------------------- | ----------------------------------------------------- |
+| Repositorio Backend  | https://github.com/MoraEdg/ProyectoTesisBackend.git  |
+| Repositorio Frontend | https://github.com/MoraEdg/ProyectoTesisFrontend.git |
 
 ---
 
@@ -47,8 +46,8 @@ src/
 │   └── codigoTramite.js    — Generador de códigos únicos (PRAC-2026-001)
 ├── middleware/
 │   ├── auth.js             — Verificación de JWT Bearer
-│   ├── roles.js            — Control de acceso por rol
-│   └── upload.js           — Configuración de multer (documentos, convenios, excel)
+│   ├── permiso.js          — Control de acceso por funcionalidad (RBAC dinámico)
+│   └── upload.js           — Configuración de multer (documentos, excel)
 └── modules/
     ├── auth/               — Login, logout, /me
     ├── catalogos/          — Roles, estados, tipos de proceso, periodos, tipos de convenio
@@ -58,14 +57,15 @@ src/
     ├── documentos/         — Subida, aprobación, observación y versionado de documentos
     ├── convenios/          — Consulta de convenios institucionales ✅ Sprint 7
     ├── generacion/         — Generación de documentos Word ✅ Sprint 6
-    └── reportes/           — Dashboard ejecutivo y planificación semestral ✅ Sprint 8
+    ├── reportes/           — Dashboard ejecutivo y planificación semestral ✅ Sprint 8
+    └── permisos/           — Administración de matriz RBAC ✅ Sprint 8
 ```
 
 ---
 
 ## Base de datos
 
-**20 tablas** en la base de datos `practicas_db`:
+**21 tablas** en la base de datos `practicas_db`:
 
 | Grupo                   | Tablas                                                                     |
 | ----------------------- | -------------------------------------------------------------------------- |
@@ -73,8 +73,9 @@ src/
 | Configuración de flujos | `plantillas_hito`, `tipos_documento`                                       |
 | Núcleo                  | `usuarios`, `estudiantes`, `tramites`, `hitos`, `documentos`               |
 | Comunicación            | `observaciones`, `historial_tramites`, `historial_hitos`                   |
-| Convenios               | `convenios`, `archivos_convenio`                                           |
+| Convenios               | `convenios`                                                                |
 | Generación              | `tipos_documento_generado`, `plantillas_documento`, `documentos_generados` |
+| Permisos RBAC           | `funcionalidades`, `roles_funcionalidades`                                 |
 
 **Columnas adicionales en `tramites`:**
 
@@ -128,17 +129,20 @@ PLANTILLAS_PATH=./plantillas
 ### 3. Crear la base de datos
 
 ```bash
-# Crear la base de datos
-psql -U postgres -c "CREATE DATABASE practicas_db;"
+# Crear la base de datos (ajustar usuario y nombre según tu entorno)
+export DB_USER=postgres DB_NAME=practicas_db
+psql -U $DB_USER -c "CREATE DATABASE $DB_NAME;"
 
-# Crear las 20 tablas con el esquema definitivo
+# Crear las 21 tablas con el esquema definitivo
 npm run db:schema
 
-# Insertar todos los datos iniciales (catálogos, hitos, plantillas, convenios y admin)
+# Insertar todos los datos iniciales (catálogos, hitos, plantillas, convenios, admin y permisos RBAC)
 npm run db:seeds
 ```
 
-Con estos dos comandos la base de datos queda en el **estado final completo**. No se requieren migraciones adicionales.
+Con estos dos comandos la base de datos queda en el **estado final completo**.
+Los scripts `npm run db:*` leen `$DB_USER` y `$DB_NAME` del entorno (Git Bash / Unix).
+En Windows con cmd.exe, sustituir `$DB_USER` por el nombre de usuario de PostgreSQL.
 
 ### 4. Plantillas de documentos
 
@@ -272,6 +276,14 @@ Base URL: `http://localhost:5000/api/v1`
 | GET    | `/reportes/dashboard`      | 5 métricas globales + 4 datasets para gráficos                      |
 | GET    | `/reportes/planificacion`  | Tabla de planificación. Filtros: `periodo_id`, `tipo_proceso_id`, `estado`, `carrera`, `modalidad`, `tiene_convenio` |
 
+### Permisos RBAC — `/permisos`
+
+| Método | Ruta                  | Auth | Permiso requerido        | Descripción                              |
+| ------ | --------------------- | ---- | ------------------------ | ---------------------------------------- |
+| GET    | `/permisos/mios`      | Sí   | (solo auth)              | Lista las claves de permiso del usuario autenticado |
+| GET    | `/permisos/matriz`    | Sí   | `settings.administrar`   | Lee la matriz completa de roles × funcionalidades |
+| PUT    | `/permisos/matriz`    | Sí   | `settings.administrar`   | Actualiza la matriz de permisos          |
+
 ### Health check
 
 ```
@@ -322,8 +334,8 @@ SUBIDO → EN_REVISION → OBSERVADO (hasta nueva versión)
 | ------------------- | --------------------------------- | ------------------------- |
 | `npm start`         | `node server.js`                  | Inicia en producción      |
 | `npm run dev`       | `nodemon server.js`               | Inicia en desarrollo      |
-| `npm run db:schema` | `psql ... -f database/schema.sql` | Crea las 20 tablas        |
-| `npm run db:seeds`  | `psql ... -f database/seeds.sql`  | Inserta datos iniciales   |
+| `npm run db:schema` | `psql ... -f database/schema.sql` | Crea las 21 tablas                   |
+| `npm run db:seeds`  | `psql ... -f database/seeds.sql`  | Inserta datos iniciales y permisos RBAC |
 
 ---
 

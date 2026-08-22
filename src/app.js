@@ -27,6 +27,7 @@ app.use('/api/v1/documentos',  require('./modules/documentos/documentos.routes')
 app.use('/api/v1/generacion',  require('./modules/generacion/generacion.routes'));
 app.use('/api/v1/convenios',  require('./modules/convenios/convenios.routes'));
 app.use('/api/v1/reportes',   require('./modules/reportes/reportes.routes'));
+app.use('/api/v1/permisos',   require('./modules/permisos/permisos.routes'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
 app.get('/api/v1/health', (req, res) => {

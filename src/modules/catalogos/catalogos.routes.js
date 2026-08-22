@@ -1,15 +1,17 @@
 const router     = require('express').Router();
 const controller = require('./catalogos.controller');
 const auth       = require('../../middleware/auth');
-const roles      = require('../../middleware/roles');
+const permiso    = require('../../middleware/permiso');
 
 router.use(auth);
 
-router.get('/roles',                    roles('Coordinador'), controller.roles);
+router.get('/roles',                    permiso('catalogos.ver_roles'),             controller.roles);
 router.get('/estados',                  controller.estados);
 router.get('/tipos-proceso',            controller.procesos);
-router.get('/tipos-convenio',           roles('Coordinador', 'Director'), controller.convenios);
+// R-1: Coordinador y Director tienen catalogos.ver_tipos_convenio en la matriz inicial.
+router.get('/tipos-convenio',           permiso('catalogos.ver_tipos_convenio'),    controller.convenios);
 router.get('/periodos',                 controller.periodos);
-router.get('/tipos-documento-generado', roles('Coordinador', 'Estudiante'), controller.tiposDocGenerado);
+// Coordinador y Estudiante tienen catalogos.ver_tipos_doc_generado en la matriz inicial.
+router.get('/tipos-documento-generado', permiso('catalogos.ver_tipos_doc_generado'), controller.tiposDocGenerado);
 
 module.exports = router;

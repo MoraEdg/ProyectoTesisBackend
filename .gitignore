@@ -1,8 +1,6 @@
 node_modules/
 .env
 uploads/documentos/*
-uploads/convenios/*
 uploads/generados/*
 !uploads/documentos/.gitkeep
-!uploads/convenios/.gitkeep
 !uploads/generados/.gitkeep

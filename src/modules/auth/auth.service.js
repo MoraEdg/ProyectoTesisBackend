@@ -60,7 +60,7 @@ async function getMe(id_usuario, rol) {
 
   if (rol === 'Estudiante') {
     const { rows } = await pool.query(
-      'SELECT id_estudiante, carrera, matricula FROM estudiantes WHERE usuario_id = $1',
+      'SELECT id_estudiante, carrera FROM estudiantes WHERE usuario_id = $1',
       [id_usuario]
     );
     if (rows.length > 0) extra.estudiante = rows[0];

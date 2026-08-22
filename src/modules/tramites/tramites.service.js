@@ -50,7 +50,7 @@ async function listar({ pagina = 1, por_pagina = 20, tipo_proceso_id, estado, pe
        per.nombre_periodo AS periodo,
        es.nombre AS estado,
        u.nombres, u.apellidos, u.cedula,
-       e.id_estudiante, e.carrera, e.matricula
+       e.id_estudiante, e.carrera
      FROM tramites t
      JOIN tipos_proceso tp ON t.tipo_proceso_id = tp.id
      JOIN periodos per      ON t.periodo_id = per.id
@@ -79,7 +79,7 @@ async function obtenerPorId(id_tramite) {
        per.id AS periodo_id, per.nombre_periodo AS periodo,
        es.id AS estado_id, es.nombre AS estado,
        u.nombres, u.apellidos, u.cedula, u.correo,
-       e.id_estudiante, e.carrera, e.matricula
+       e.id_estudiante, e.carrera
      FROM tramites t
      JOIN tipos_proceso tp ON t.tipo_proceso_id = tp.id
      JOIN periodos per      ON t.periodo_id = per.id

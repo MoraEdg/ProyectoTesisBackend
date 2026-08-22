@@ -21,9 +21,6 @@ const reglasCrear = [
 
   body('carrera')
     .trim().notEmpty().withMessage('La carrera es obligatoria'),
-
-  body('matricula')
-    .trim().notEmpty().withMessage('La matrícula es obligatoria'),
 ];
 
 // ─── REGLAS PARA EDITAR ───────────────────────────────────────────────────────
@@ -34,7 +31,6 @@ const reglasEditar = [
   body('correo').optional().trim().isEmail().withMessage('El correo electrónico no es válido'),
   body('telefono').optional().trim(),
   body('carrera').optional().trim().notEmpty().withMessage('La carrera no puede estar vacía'),
-  body('matricula').optional().trim().notEmpty().withMessage('La matrícula no puede estar vacía'),
 
   body('cedula').not().exists().withMessage('La cédula no puede modificarse'),
   body('nombre_usuario').not().exists().withMessage('El nombre de usuario no puede modificarse'),

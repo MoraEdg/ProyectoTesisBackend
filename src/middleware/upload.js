@@ -22,16 +22,6 @@ exports.uploadDocumento = multer({
   }
 }).single('archivo');
 
-exports.uploadConvenio = multer({
-  storage: crearStorage('./uploads/convenios'),
-  limits: { fileSize: 20 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const permitidos = ['.pdf', '.docx', '.jpg', '.jpeg', '.png'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, permitidos.includes(ext));
-  }
-}).single('archivo');
-
 const TMP_DIR = './uploads/tmp';
 if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
