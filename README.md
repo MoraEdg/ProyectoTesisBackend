@@ -1,7 +1,8 @@
 # Backend — Sistema de Gestión de Prácticas Preprofesionales UISEK
 
 **Autor:** Edgar Mora  
-**Proyecto de Tesis — Universidad SEK**
+**Proyecto de Tesis — Universidad SEK**  
+**Versión:** 1.0.0 — Baseline final validada
 
 | Recurso              | Enlace                                                |
 | -------------------- | ----------------------------------------------------- |
@@ -144,6 +145,16 @@ Con estos dos comandos la base de datos queda en el **estado final completo**.
 Los scripts `npm run db:*` leen `$DB_USER` y `$DB_NAME` del entorno (Git Bash / Unix).
 En Windows con cmd.exe, sustituir `$DB_USER` por el nombre de usuario de PostgreSQL.
 
+> **No es necesario ejecutar nada de `database/migrations/`.** Esa carpeta contiene
+> scripts históricos usados durante el desarrollo sobre bases de datos ya
+> existentes; todo su contenido ya está incorporado en `schema.sql` y `seeds.sql`.
+> Ver `database/migrations/README.md` para el detalle.
+
+`seeds.sql` inserta datos de **prueba** (convenios, estudiantes de ejemplo, usuario
+`admin`) para tener el sistema operativo de inmediato. En un despliegue real estos
+datos deberían reemplazarse o depurarse — la estandarización de datos de producción
+es un trabajo de escalamiento futuro, fuera del alcance de esta versión.
+
 ### 4. Plantillas de documentos
 
 Los 4 archivos DOCX ya están incluidos en el repositorio dentro de `plantillas/`. Sus nombres y marcadores requeridos son:
@@ -209,6 +220,10 @@ Base URL: `http://localhost:5000/api/v1`
 | PUT    | `/estudiantes/:id`            | Editar (cédula inmutable)                        |
 | PATCH  | `/estudiantes/:id/desactivar` | Desactivación lógica                             |
 | POST   | `/estudiantes/importar`       | Importar desde Excel (.xlsx, máx. 10 MB)         |
+
+Plantilla de referencia con el formato esperado: `resources/plantillas/estudiantes_validos.xlsx`
+(columnas: Cedula, Apellidos, Nombres, Correo, Carrera; opcional: Telefono). El archivo
+trae datos de prueba y sirve a la vez como plantilla del formato aceptado por la importación.
 
 ### Gestión de Trámites
 
@@ -352,3 +367,8 @@ SUBIDO → EN_REVISION → OBSERVADO (hasta nueva versión)
 | Sprint 6.5 | Ajustes: hitos condicionales (SIN/CON_CONVENIO), modalidad, historial | ✅ Completado |
 | Sprint 7 | Convenios institucionales (consulta)                          | ✅ Completado |
 | Sprint 8 | Reportes institucionales (dashboard + planificación + Excel)  | ✅ Completado |
+
+**El desarrollo planificado de esta versión está finalizado (v1.0.0).** Funcionalidades
+adicionales (notificaciones, interfaz para Director/Decano, recuperación de contraseña,
+gestión de archivos en convenios, etc.) se consideran mejoras o escalamiento futuro,
+con su propia planificación y trazabilidad — no son alcance pendiente de esta versión.
